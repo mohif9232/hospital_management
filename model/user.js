@@ -16,18 +16,19 @@ async function checkregister(param) {
         username: joi.string().email({ tlds: { allow: ['com', 'net', 'in'] } }).max(30).min(3).required(),
         password: joi.string().max(200).min(3).required(),
         confirm_password: joi.any().valid(joi.ref("password")).required(),
-        mobile_no: joi.string().max(30).min(4).required()
+        mobile_no: joi.number().min(4).max(11).required()
     }).options({
         abortEarly: false
-    });
+    })
 
-    let check = schema.validate(param)
-    if (check.error) {
-        let error = [];
+    let check = await schema.validate(param)
+
+    if (!check || check.error) {
+        let errors = []
         for (let err of check.error.details) {
-            error.push(err.message)
-        };
-        return { error: error }
+            errors.push(err.message)
+        }
+        return { error: errors }
     }
     return { data: check.value }
 }
@@ -40,10 +41,10 @@ async function registerpatient(param) {
         return { error: valid.error }
     }
 
+
     let checkpatient = await User.findOne({ where: { username: param.username } }).catch((error) => {
         return { error }
     })
-    console.log(checkpatient)
     if (checkpatient) {
         return { error: "This user is already existed" }
     }
