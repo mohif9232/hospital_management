@@ -1,27 +1,31 @@
 let { addDr, updateDr, deletedr, undeletedr, dractive, drUnactive, find } = require("../model/doctor")
 let uploads = require("../helper/file");
 const Doctor = require("../schema/doctor");
+let excel = require("../helper/excel")
 
 async function AddDr(request, response) {
     let addpic = await uploads(request, response, [{ name: "doctor", maxCount: 3 }], { destination: "./doctor-images/", filesize: 3 * 1000 * 1000 }).catch((err) => {
         return { error: err }
     });
+    console.log(addpic)
     if (!addpic || addpic.error) {
         return response.status(500).send("something went wrong")
     }
+
     let data = [];
     for (let i of addpic.doctor) {
-        data.push(i.push)
+        data.push(i.path)
     }
     let path = data.join("   AND  ")
-
+    console.log(path)
     let add = await addDr(request.body, path, request.userData).catch((err) => {
         return { error: err }
     })
+
     if (!add || add.error) {
-        return response.status(500).send(add.error)
+        return response.status(500).send({ error: add.error })
     }
-    return response.status(200).status(add.data)
+    return response.status(200).send({ data: add.data })
 }
 
 async function update(request, response) {
@@ -31,25 +35,28 @@ async function update(request, response) {
     if (!addpic || addpic.error) {
         return response.status(500).send("something went wrong")
     }
+
     let data = [];
     for (let i of addpic.doctor) {
-        data.push(i.push)
+        data.push(i.path)
     }
     let path = data.join("   AND  ")
 
+    console.log(path)
     let add = await updateDr(request.body, path, request.userData).catch((err) => {
         return { error: err }
     })
     if (!add || add.error) {
         return response.status(500).send(add.error)
     }
-    return response.status(200).status(add.data)
+    return response.status(200).send(add.data)
 }
 
 async function Delete(request, response) {
     let check = await deletedr(request.body, request.userData).catch((err) => {
         return { error: err }
     })
+    console.log(check)
     if (!check || check.error) {
         return response.status(500).send({ error: check.error })
     }
@@ -89,6 +96,7 @@ async function view(request, response) {
     let check = await find(request.body).catch((err) => {
         return { error: err }
     })
+    console.log(check)
     if (!check || check.error) {
         return response.status(500).send({ error: check.error })
     }
@@ -120,4 +128,4 @@ async function exporDr(request, response) {
     })
 
 }
-module.exports = { addDr, update, Delete, unDelete, activate, unActive, view, exporDr }
+module.exports = { AddDr, update, Delete, unDelete, activate, unActive, view, exporDr }

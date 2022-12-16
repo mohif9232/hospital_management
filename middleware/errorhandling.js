@@ -1,4 +1,3 @@
-require("express-async-errors")
 
 let errorhandler = (error, req, res, next) => {
     let status = 505

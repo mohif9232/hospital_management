@@ -1,5 +1,6 @@
 let { registerpatient, loginpatient, getme, forget, reset, change, updateprofile, deactivate, activate, assignpermission, findall, update, getpermission, getpermission2, softdelete, softundelete, unactive, active } = require("../model/user")
 let excel = require("../helper/excel")
+let { User } = require("../schema/user")
 
 async function register(request, response) {
     let patient = await registerpatient(request.body).catch((err) => {
@@ -8,13 +9,14 @@ async function register(request, response) {
     if (!patient || patient.error) {
         return response.status(500).send({ error: patient.error })
     }
-    return response.send(patient)
+    return response.status(200).send({ data: patient.data })
 }
 
 async function login(request, response) {
     let patient = await loginpatient(request.body).catch((err) => {
         return { error: err }
     })
+    console.log(patient)
     if (!patient || patient.error) {
         return response.status(401).send({ error: patient.error })
     }
@@ -33,9 +35,10 @@ async function about_me(request, response) {
 }
 
 async function forgetpassword(request, response) {
-    let userpass = await forget(request.body, next).catch((err) => {
+    let userpass = await forget(request.body).catch((err) => {
         return { error: err }
     })
+    console.log(userpass)
     if (!userpass || (userpass && userpass.error)) {
         return response.status(401).send({ error: userpass.error })
     }
@@ -139,6 +142,7 @@ async function permission(request, response) {
     let task = await getpermission().catch((err) => {
         return { error: err }
     })
+    console.log(task)
     if (!task || (task && task.error)) {
         return response.status(401).send({ error: task.error })
     }

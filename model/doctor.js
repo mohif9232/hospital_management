@@ -38,12 +38,12 @@ async function addDr(param, image_path, userData) {
     }).catch((err) => {
         return { error: err }
     })
-    if (!checkdr || checkdr.error) {
+    if (checkdr) {
         return { error: "Doctor already existed" }
     }
     let add = await Doctor.create({
         name: param.name,
-        degree: param.name,
+        degree: param.degree,
         specialization: param.specialization,
         appointment: param.appointment,
         fees: param.fees,
@@ -52,6 +52,7 @@ async function addDr(param, image_path, userData) {
     }).catch((err) => {
         return { error: err }
     })
+    console.log(add)
     if (!add || add.error) {
         return { error: "Internal Server Error" }
     }
@@ -92,15 +93,16 @@ async function updateDr(param, image_path, userData) {
     }
     let update = await Doctor.update({
         name: param.name,
-        degree: param.name,
+        degree: param.degree,
         specialization: param.specialization,
         appointment: param.appointment,
         fees: param.fees,
         image_path: image_path,
         updateBy: userData.id
-    }).catch((err) => {
+    }, { where: { id: param.doctor_id } }).catch((err) => {
         return { error: err }
     })
+    console.log(update)
     if (!update || update.error) {
         return { error: "Internal Error server" }
     }
@@ -131,7 +133,7 @@ async function drUnactive(param, userData) {
     if (check.error) {
         return { error: check.error }
     };
-    let findpro = await Product.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
+    let findpro = await Doctor.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
         return { error: err }
     })
     if (!findpro || findpro.error) {
@@ -154,7 +156,7 @@ async function dractive(param, userData) {
     if (check.error) {
         return { error: check.error }
     };
-    let findpro = await Product.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
+    let findpro = await Doctor.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
         return { error: err }
     })
     if (!findpro || findpro.error) {
@@ -176,7 +178,7 @@ async function deletedr(param, userData) {
     if (check.error) {
         return { error: check.error }
     };
-    let findpro = await Product.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
+    let findpro = await Doctor.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
         return { error: err }
     })
     if (!findpro || findpro.error) {
@@ -200,19 +202,19 @@ async function undeletedr(param, userData) {
     if (check.error) {
         return { error: check.error }
     };
-    let findpro = await Product.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
+    let findpro = await Doctor.findOne({ where: { id: param.doctor_id, name: param.name } }).catch((err) => {
         return { error: err }
     })
     if (!findpro || findpro.error) {
         return { error: "Id and Name not matched" }
     }
-    let updatepro = await Doctor.update({ is_available: false, is_deleted: true, updatedBy: userData.id }, { where: { id: findpro.id } }).catch((err) => {
+    let updatepro = await Doctor.update({ is_available: true, is_deleted: false, updatedBy: userData.id }, { where: { id: findpro.id } }).catch((err) => {
         return { error: err }
     });
     if (!updatepro || updatepro.error) {
         return { error: "server error" }
     }
-    return { data: "Doctor deleted succeesfuuly" }
+    return { data: "Doctor undeleted succeesfuuly" }
 }
 
 //find view
@@ -246,7 +248,7 @@ async function find(param) {
     if (param.name) {
         query = { name: param.name }
     }
-    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "appointments", "image_path", "fees", "is_available"], where: query, raw: true }).catch((err) => {
+    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "appointment", "image_path", "fees", "is_available"], where: query, raw: true }).catch((err) => {
         return { error: err }
     })
     for (let i of find) {

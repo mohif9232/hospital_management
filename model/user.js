@@ -5,6 +5,9 @@ let jwt = require("jsonwebtoken")
 let Permission = require("../schema/permission")
 let { User_permissiion, Op } = require("../schema/user_permission")
 let { email } = require("../helper/email")
+let { secretKey } = require("../config/constant")
+let randomstring = require("randomstring")
+const { sequelize, QueryTypes } = require("../init/dbconnect")
 
 
 //for register of user 
@@ -16,7 +19,7 @@ async function checkregister(param) {
         username: joi.string().email({ tlds: { allow: ['com', 'net', 'in'] } }).max(30).min(3).required(),
         password: joi.string().max(200).min(3).required(),
         confirm_password: joi.any().valid(joi.ref("password")).required(),
-        mobile_no: joi.number().min(4).max(11).required()
+        mobile_no: joi.number().required()
     }).options({
         abortEarly: false
     })
@@ -121,7 +124,7 @@ async function loginpatient(param) {
     }
     let checkpass = await bcrypt.compare(param.password, checkpatient.password).catch((err) => {
         return { error: err }
-    });
+    })
     if (!checkpass || checkpass.error) {
         return { error: "Username & password Invalid" }
     }
@@ -139,7 +142,7 @@ async function loginpatient(param) {
 
 async function getme(userData) {
 
-    let findme = await User.findOne({ attributes: ["name", "username", "mobile_no"], where: { id: userData.id } }).catch((err) => {
+    let findme = await User.findOne({ attributes: ["name", "username", "mobile_no", "profile_pic_path"], where: { id: userData.id } }).catch((err) => {
         return { error: err }
     });
     if (!findme || findme.error) {
@@ -319,14 +322,14 @@ async function checkupdate(param) {
     let schema = joi.object({
         name: joi.string().max(30).min(2),
         username: joi.string().max(30).min(3),
-        mobile_no: joi.string().max(11).min(5)
+        mobile_no: joi.number()
     }).options({
         abortEarly: false
     });
 
     let check = schema.validate(param)
     if (check.error) {
-        let error = [];
+        let error = []
         for (let err of check.error.details) {
             error.push(err.message)
         }
@@ -358,26 +361,6 @@ async function updateprofile(param, userData) {
 }
 
 
-//for deactivate account
-async function checkupdate(param) {
-    let schema = joi.object({
-        name: joi.string().max(30).min(2),
-        username: joi.string().max(30).min(3),
-        mobile_no: joi.string().max(11).min(5)
-    }).options({
-        abortEarly: false
-    });
-
-    let check = schema.validate(param)
-    if (check.error) {
-        let error = [];
-        for (let err of check.error.details) {
-            error.push(err.message)
-        }
-        return { error: check.error }
-    }
-    return { data: check.value }
-}
 
 //deactivate me
 
@@ -474,9 +457,10 @@ async function findall(param) {
     if (!check || check.error) {
         return { error: check.error }
     }
+
     let query = {};
     if (param.user_id) {
-        query = { where: { id: param.id } }
+        query = { where: { id: param.user_id } }
     }
     if (param.name) {
         query = { where: { name: param.name } }
@@ -485,10 +469,10 @@ async function findall(param) {
         query = { where: { username: param.username } }
     }
 
-    let alluser = await User.findAll(query).catch((err) => {
+    let alluser = await User.findAll(query, { raw: true }).catch((err) => {
         return { error: err }
     })
-
+    console.log(alluser)
     if (!alluser || (alluser && alluser.error) || alluser.length == 0) {
         return { error: "Cant find user" }
     }
@@ -562,12 +546,12 @@ async function assignpermission(param, userData) {
 
 //for update user
 
-async function checkupdate(param) {
+async function checkupdateadmin(param) {
     let schema = joi.object({
         user_id: joi.number().max(300).min(0).required(),
         name: joi.string().max(30).min(1),
         username: joi.string().max(30).min(3),
-        mobile_no: joi.string().max(10).min(4)
+        mobile_no: joi.number()
     }).options({
         abortEarly: false
     });
@@ -584,7 +568,7 @@ async function checkupdate(param) {
 }
 
 async function update(param, userData) {
-    let check = await checkupdate(param).catch((err) => {
+    let check = await checkupdateadmin(param).catch((err) => {
         return { error: err }
     });
     if (!check || check.error) {
@@ -641,20 +625,20 @@ async function getpermission2(param) {
         return { error: jo.error }
     }
 
-    let check = await User.findOne({ where: { id: param.user_id } }).catch((err) => {
+    let check = await User.findOne({ where: { id: param.user_id }, raw: true }).catch((err) => {
         return { error: err }
     });
     console.log(check)
     if (!check || check.error) {
         return { error: "id not found" }
     }
-    let [result] = await User.sequelize.query("SELECT user.id , user.name , GROUP_CONCAT(permission.permission) AS permission FROM user LEFT JOIN user_permission ON user.id = user_permission.user_id LEFT JOIN permission ON permission.id=user_permission.permission_id WHERE user.id = :key GROUP BY user.id", {
-        replacements: { key: param.user_id },
+    let permission = await sequelize.query("SELECT user.id , user.name , GROUP_CONCAT(permission.permission) AS permission FROM user LEFT JOIN user_permission ON user.id = user_permission.user_id LEFT JOIN permission ON permission.id=user_permission.permission_id WHERE user.id = :key GROUP BY user.id", {
+        replacements: { key: check.id },
         type: QueryTypes.SELECT
     }).catch((err) => {
         return { error: err }
     })
-    let permission = result
+    console.log(permission)
     if (!permission || permission.error) {
         return { error: permission.error }
 
@@ -667,15 +651,15 @@ async function getpermission2(param) {
 
 async function getpermission(param) {
 
-    let permission = await User.sequelize.query("SELECT * FROM permission", { type: QueryTypes.SELECT }).catch((err) => {
+    let permission = await User.sequelize.query("SELECT * FROM permission", {
+        type: QueryTypes.SELECT
+    }).catch((err) => {
         return { error: err }
     })
-
     if (!permission || permission.error) {
-        return { error: permission.error }
+        return { error: "Oops something went wrong" }
 
     }
-
     return { data: permission }
 }
 

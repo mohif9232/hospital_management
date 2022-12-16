@@ -17,7 +17,7 @@ function uploads(request, response, fileField, options) {
             cb(null, fN + ".jpg")
         }
     });
-    let = function (request, file, cb) {
+    let fileFilter = function (request, file, cb) {
         let filetypes = fileTypes;
         let mimetype = filetypes.test(file.mimetype);
         let extname = filetypes.test(path.extname(file.originalname).toLowerCase());
