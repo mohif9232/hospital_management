@@ -14,9 +14,12 @@ Slot.init({
         allowNull: false
     }
 }, {
+    updatedAt: false,
+    createdAt: false,
     modelName: "Slot",
     tableName: "slot",
     sequelize
+
 })
 
 module.exports = Slot
