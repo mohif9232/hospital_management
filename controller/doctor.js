@@ -1,4 +1,4 @@
-let { addDr, updateDr, deletedr, undeletedr, dractive, drUnactive, find } = require("../model/doctor")
+let { addDr, updateDr, updateDrpic, deletedr, undeletedr, dractive, drUnactive, find } = require("../model/doctor")
 let uploads = require("../helper/file");
 const Doctor = require("../schema/doctor");
 let excel = require("../helper/excel")
@@ -7,7 +7,6 @@ async function AddDr(request, response) {
     let addpic = await uploads(request, response, [{ name: "doctor", maxCount: 3 }], { destination: "./doctor-images/", filesize: 3 * 1000 * 1000 }).catch((err) => {
         return { error: err }
     });
-    console.log(addpic)
     if (!addpic || addpic.error) {
         return response.status(500).send("something went wrong")
     }
@@ -29,27 +28,36 @@ async function AddDr(request, response) {
 }
 
 async function update(request, response) {
-    let addpic = await uploads(request, response, [{ name: "doctor", maxCount: 3 }], { destination: "./doctor-images/", filesize: 3 * 1000 * 1000 }).catch((err) => {
-        return { error: err }
-    });
-    if (!addpic || addpic.error) {
-        return response.status(500).send("something went wrong")
-    }
 
-    let data = [];
-    for (let i of addpic.doctor) {
-        data.push(i.path)
-    }
-    let path = data.join("   AND  ")
-
-    console.log(path)
-    let add = await updateDr(request.body, path, request.userData).catch((err) => {
+    let add = await updateDr(request.body, request.userData).catch((err) => {
         return { error: err }
     })
     if (!add || add.error) {
         return response.status(500).send(add.error)
     }
     return response.status(200).send(add.data)
+}
+
+async function updatePic(request, response) {
+    let addpic = await uploads(request, response, [{ name: "doctor", maxCount: 3 }], { destination: "./doctor-images/", filesize: 3 * 1000 * 1000 }).catch((err) => {
+        return { error: err }
+    });
+    if (!addpic || addpic.error) {
+        return response.status(500).send("something went wrong")
+    }
+    let data = [];
+    for (let i of addpic.doctor) {
+        data.push(i.path)
+    }
+    let path = data.join("   AND  ")
+    let update = await updateDrpic(request.body, path, request.userData).catch((err) => {
+        return { error: err }
+    })
+    if (!update || update.error) {
+        return response.status(500).send({ error: update.error })
+    }
+    return response.status(200).send({ data: update.data })
+
 }
 
 async function Delete(request, response) {
@@ -128,4 +136,4 @@ async function exporDr(request, response) {
     })
 
 }
-module.exports = { AddDr, update, Delete, unDelete, activate, unActive, view, exporDr }
+module.exports = { AddDr, update, updatePic, Delete, unDelete, activate, unActive, view, exporDr }

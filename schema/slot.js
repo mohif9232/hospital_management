@@ -9,8 +9,16 @@ Slot.init({
         autoIncrement: true,
         allowNull: true
     },
-    slot_time: {
+    doctor_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    time_slot: {
         type: DataTypes.STRING,
+        allowNull: false
+    },
+    is_available: {
+        type: DataTypes.BOOLEAN,
         allowNull: false
     }
 }, {

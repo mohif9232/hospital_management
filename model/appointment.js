@@ -2,12 +2,13 @@ let { todayDate, tomorrowDate } = require("../config/time")
 let joi = require("joi");
 const Doctor = require("../schema/doctor");
 let { Appointment } = require("../schema/appointment")
-let Slot = require("../schema/slot")
+let Slot = require("../schema/slot");
+let moment = require("moment")
 
 function joiCheck(param) {
     let schema = joi.object({
         doctor_id: joi.number().min(1).required(),
-        date: joi.date().required()
+        date: joi.string().valid(tomorrowDate).required()
     }).options({
         abortEarly: false
     })
@@ -33,6 +34,59 @@ async function appoint(param, userData) {
     if (!find || find.error) {
         return { error: "This Doctor is not available" }
     }
+    if (param.date != tomorrowDate) {
+        return { error: "The appointment is only available for tomorrow" }
+    }
+    let get = await Slot.findOne({
+        where: {
+            doctor_id: find.id,
+            is_available: true
+        }, raw: true
+    }).catch((err) => {
+        return { error: err }
+    })
+    if (!get || get.error) {
+        return { error: "Slots are not available for appointment" }
+    }
+    let how = await Appointment.findOne({
+        where: {
+            user_id: userData.id,
+            doctor_id: param.doctor_id
+        }
+    }).catch((err) => {
+        return { error: err }
+    })
+    if (how) {
+        return { error: "You cant make booking multiple times" }
+    }
+    let assign = await Appointment.create({
+        user_id: userData.id,
+        doctor_id: find.id,
+        time_slot: get.time_slot,
+        appointment_date: param.date
+    }).catch((err) => {
+        return { error: err }
+    })
+    if (!assign || assign.error) {
+        return { error: "Internal Server Error" }
+    }
+
+    let update = await Slot.update({ is_available: false }, {
+        where: {
+            id: get.id
+        }
+    }).catch((err) => {
+        return { error: err }
+    })
+    if (!update || update.error) {
+        return { error: "Internal Server Error" }
+    }
+
+    return { data: `Your Appointment is Under process for tomorrow ${tomorrowDate} please wait for confirmation ` }
+
 
 
 }
+
+
+module.exports = { appoint }

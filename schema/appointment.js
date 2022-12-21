@@ -18,9 +18,13 @@ Appointment.init({
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    slot_id: {
-        type: DataTypes.INTEGER,
+    time_slot: {
+        type: DataTypes.STRING,
         allowNull: false
+    },
+    appointment_date: {
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     confirmedBy: {
         type: DataTypes.INTEGER,

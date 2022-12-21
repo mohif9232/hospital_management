@@ -1,6 +1,8 @@
 let doctor = require("../schema/doctor")
 let joi = require("joi");
 const Doctor = require("../schema/doctor");
+const Slot = require("../schema/slot");
+let = require("../schema/slot")
 
 
 
@@ -11,8 +13,8 @@ function draddjoi(param) {
         name: joi.string().max(30).min(1).required(),
         degree: joi.string().required(),
         specialization: joi.string().required(),
-        appointment: joi.number().required(),
         fees: joi.number().required(),
+        time_slots: joi.array().items({ slot: joi.string().required(), limit: joi.number().required() }).required(),
     }).options({ abortEarly: false })
     let check = schema.validate(param)
     if (check.error) {
@@ -41,20 +43,32 @@ async function addDr(param, image_path, userData) {
     if (checkdr) {
         return { error: "Doctor already existed" }
     }
+    let data = param.time_slots
+    let newData = data.toString()
     let add = await Doctor.create({
         name: param.name,
         degree: param.degree,
         specialization: param.specialization,
-        appointment: param.appointment,
         fees: param.fees,
+        advanced_fees: (param.fees / 2),
+        time_slots: newData,
         image_path: image_path,
         createdBy: userData.id
     }).catch((err) => {
         return { error: err }
     })
-    console.log(add)
     if (!add || add.error) {
         return { error: "Internal Server Error" }
+    }
+    let slot = [];
+    for (let i of param.time_slots) {
+        slot.push({ doctor_id: add.id, time_slot: i, is_available: true })
+    }
+    let time = await Slot.bulkCreate(slot).catch((err) => {
+        return { error: err }
+    })
+    if (!time || time.error) {
+        return { error: "internal server error" }
     }
     return { data: "Added succesffullyy" }
 
@@ -67,8 +81,8 @@ function updatejoi(param) {
         name: joi.string().max(30).min(1),
         degree: joi.string(),
         specialization: joi.string(),
-        appointment: joi.number(),
         fees: joi.number(),
+        time_slots: joi.array().items(joi.string().required()),
     }).options({ abortEarly: false })
     let check = schema.validate(param)
     if (check.error) {
@@ -80,7 +94,7 @@ function updatejoi(param) {
     }
     return { data: check.value }
 }
-async function updateDr(param, image_path, userData) {
+async function updateDr(param, userData) {
     let check = updatejoi(param)
     if (!check || check.error) {
         return { error: check.error }
@@ -91,22 +105,89 @@ async function updateDr(param, image_path, userData) {
     if (!find || find.error) {
         return { error: "id not found" }
     }
+    let data = param.time_slots
+    let newData = data.toString()
+
     let update = await Doctor.update({
         name: param.name,
         degree: param.degree,
         specialization: param.specialization,
-        appointment: param.appointment,
         fees: param.fees,
-        image_path: image_path,
+        advanced_fees: (param.fees / 2),
+        time_slots: newData,
         updateBy: userData.id
     }, { where: { id: param.doctor_id } }).catch((err) => {
         return { error: err }
     })
-    console.log(update)
     if (!update || update.error) {
         return { error: "Internal Error server" }
     }
+    if (param.time_slots) {
+        let done = await Slot.destroy({ where: { doctor_id: find.id } }).catch((err) => {
+            return { error: err }
+        })
+
+        if (!done || done.error) {
+            return { error: "Internal server Error" }
+        }
+        let slot = [];
+        for (let a of param.time_slots) {
+            slot.push({ doctor_id: find.id, time_slot: a, is_available: true })
+        }
+        let add = await Slot.bulkCreate(slot).catch((err) => {
+            return { error: err }
+        })
+        if (!add || add.error) {
+            return { error: "Internal Server Error" }
+        }
+    }
+
     return { data: "Updated Successfullyy..." }
+}
+
+//for updating pic of dr
+
+function picjoi(param) {
+    let schema = joi.object({
+        doctor_id: joi.number().min(1).required(),
+    }).options({ abortEarly: false })
+    let check = schema.validate(param)
+    if (check.error) {
+        let error = [];
+        for (let err of check.error.details) {
+            error.push(err.message)
+        }
+        return { error: error }
+    }
+    return { data: check.value }
+}
+
+async function updateDrpic(param, image_path, userData) {
+    let check = picjoi(param)
+    if (!check || check.error) {
+        return { error: check.error }
+    }
+    let find = await Doctor.findOne({ where: { id: param.doctor_id } }).catch((err) => {
+        return { error: err }
+    })
+    if (!find || find.error) {
+        return { error: "id not found" }
+    }
+    let update = await Doctor.update({
+        image_path: image_path,
+        updateBy: userData.id
+    }, {
+        where: {
+            id: find.id
+        }
+    }).catch((err) => {
+        return { error: err }
+    })
+
+    if (!update || update.error) {
+        return { error: "Internal Server Error" }
+    }
+    return { data: " Profile pic updated successfullyyy..." }
 }
 
 //for unactive
@@ -248,7 +329,7 @@ async function find(param) {
     if (param.name) {
         query = { name: param.name }
     }
-    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "appointment", "image_path", "fees", "is_available"], where: query, raw: true }).catch((err) => {
+    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "image_path", "fees", "advanced_fees", "is_available"], where: query, raw: true }).catch((err) => {
         return { error: err }
     })
     for (let i of find) {
@@ -260,4 +341,4 @@ async function find(param) {
     return { data: find }
 }
 
-module.exports = { addDr, updateDr, deletedr, undeletedr, dractive, drUnactive, find }
+module.exports = { addDr, updateDr, updateDrpic, deletedr, undeletedr, dractive, drUnactive, find }

@@ -21,19 +21,20 @@ Doctor.init({
         type: DataTypes.STRING,
         allowNull: false
     },
-    appointment: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            max: 9,
-        }
-    },
     image_path: {
         type: DataTypes.STRING,
         allowNull: true
     },
     fees: {
         type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    advanced_fees: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    time_slots: {
+        type: DataTypes.STRING,
         allowNull: false
     },
     is_available: {
