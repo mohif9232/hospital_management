@@ -1,7 +1,7 @@
 let { register, login, forgetpassword, about_me, resetpassword, changepassword, updatemyprofile, deactivateme, activateme, addpermission, finduser, updateuser, permission, userpermission, softdeleteuser, softundeleteuser, activeuser, unactiveuser, exporUsert } = require("../controller/user")
 
 let { AddDr, update, updatePic, Delete, unDelete, activate, unActive, view, exporDr } = require("../controller/doctor")
-let { appointment } = require("../controller/appointment")
+let { appointment , appointMyView, ViewAllappointment} = require("../controller/appointment")
 
 let { auth } = require("../middleware/auth")
 require("express-async-errors")
@@ -14,7 +14,7 @@ app.post("/api/v1/register", register)
 app.post("/api/v1/login", login)
 
 app.post("/api/v1/forget_password", forgetpassword)
-app.put("/api/v1/reset", resetpassword)
+app.put("/api/v1/reset_password", resetpassword)
 
 app.get("/api/v1/user/about_me", auth("User"), about_me)
 app.put("/api/v1/user/update_myprofile", auth("User"), updatemyprofile)
@@ -24,11 +24,13 @@ app.put("/api/v1/user/deactivate_me", auth("User"), deactivateme)
 app.put("/api/v1/activate_me", activateme)
 
 app.post("/api/v1/user/book_appointment", auth("User"), appointment)
+app.get("/api/v1/user/view_appointment", auth("User"), appointMyView)
+
 
 
 //admin
 
-app.get("/api/v1/user/view_user", auth("viewPatint"), finduser)
+app.get("/api/v1/user/view_user", auth("viewPatient"), finduser)
 app.put("/api/v1/user/update_user", auth("updateUser"), updateuser)
 
 app.get("/api/v1/user/get_permission", auth("assignPermission"), permission)
@@ -48,7 +50,7 @@ app.put("/api/v1/user/update_doctor", auth("updateDr"), update)
 
 app.put("/api/v1/user/update_doctor_pic", auth("updateDr"), updatePic)
 
-app.get("/api/v1/user/view_doctor", view)
+app.get("/api/v1/view_doctor", view)
 
 app.delete("/api/v1/user/delete_doctor", auth("removeDr"), Delete)
 app.delete("/api/v1/user/undelete_doctor", auth("removeDr"), unDelete)
@@ -58,9 +60,13 @@ app.put("/api/v1/user/unactivate_doctor", auth("blockDr"), unActive)
 
 app.get("/api/v1/user/export_doctor", auth("exportDr"), exporDr)
 
+app.get("/api/v1/user/view_user_appointment", auth("viewAppointment"), ViewAllappointment)
+
+
 app.use(errorhandler)
 
 module.exports = app
+
 
 
 

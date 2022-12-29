@@ -44,7 +44,7 @@ async function addDr(param, image_path, userData) {
         return { error: "Doctor already existed" }
     }
     let data = param.time_slots
-    let newData = data.toString()
+    let newData = JSON.stringify(data)
     let add = await Doctor.create({
         name: param.name,
         degree: param.degree,
@@ -59,16 +59,6 @@ async function addDr(param, image_path, userData) {
     })
     if (!add || add.error) {
         return { error: "Internal Server Error" }
-    }
-    let slot = [];
-    for (let i of param.time_slots) {
-        slot.push({ doctor_id: add.id, time_slot: i, is_available: true })
-    }
-    let time = await Slot.bulkCreate(slot).catch((err) => {
-        return { error: err }
-    })
-    if (!time || time.error) {
-        return { error: "internal server error" }
     }
     return { data: "Added succesffullyy" }
 
@@ -329,11 +319,19 @@ async function find(param) {
     if (param.name) {
         query = { name: param.name }
     }
-    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "image_path", "fees", "advanced_fees", "is_available"], where: query, raw: true }).catch((err) => {
+    let find = await Doctor.findAll({ attributes: ["name", "degree", "specialization", "image_path", "fees", "advanced_fees", "is_available","time_slots"], where: query, raw: true }).catch((err) => {
         return { error: err }
     })
+   
     for (let i of find) {
-        i.is_available = i.is_available == 1 ? "available" : "Not available"
+        let data= JSON.parse(i.time_slots)
+        let slot = []
+        for(let a of data){
+            slot.push(a.slot)
+        }
+        i.time_slots= slot
+        i.is_available = i.is_available == 1 ? "available" : "Not available";
+        
     }
     if (!find || find.error || find.length == 0) {
         return { error: "OOps cant find" }

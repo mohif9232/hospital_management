@@ -16,10 +16,10 @@ async function AddDr(request, response) {
         data.push(i.path)
     }
     let path = data.join("   AND  ")
-    console.log(path)
     let add = await addDr(request.body, path, request.userData).catch((err) => {
         return { error: err }
     })
+    console.log(add)
 
     if (!add || add.error) {
         return response.status(500).send({ error: add.error })

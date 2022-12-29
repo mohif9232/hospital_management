@@ -26,6 +26,14 @@ Appointment.init({
         type: DataTypes.STRING,
         allowNull: false,
     },
+    appointment_status:{
+        type:DataTypes.INTEGER,
+        defaultValue:1
+    },
+    payment_status:{
+        type:DataTypes.INTEGER,
+        defaultValue:0
+    },
     confirmedBy: {
         type: DataTypes.INTEGER,
         allowNull: true
